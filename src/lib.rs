@@ -1,4 +1,4 @@
-use std::f32::consts::PI;
+mod synth;
 
 #[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;
@@ -38,22 +38,6 @@ pub fn tone() -> Handle {
     })
 }
 
-fn sin_sample(sample_clock: f32, sample_rate: f32, freq: f32) -> f32 {
-    (2.0 * (sample_clock * freq * PI / sample_rate)).sin()
-}
-
-fn sqr_sample(sample_clock: f32, sample_rate: f32, freq: f32) -> f32 {
-    (2.0 * (sample_clock * freq * PI / sample_rate)).sin().signum()
-}
-
-fn tri_sample(sample_clock: f32, sample_rate: f32, freq: f32) -> f32 {
-    (2.0 * ((2.0 * (((sample_clock * freq * PI / sample_rate) - PI / 4.0) % PI) - PI) / PI)).abs() - 1.0
-}
-
-fn saw_sample(sample_clock: f32, sample_rate: f32, freq: f32) -> f32 {
-    (2f32 * ((sample_clock * freq * PI / sample_rate) % PI) - PI) / PI
-}
-
 fn run<T>(device: &cpal::Device, config: &cpal::StreamConfig) -> Stream
 where
     T: SizedSample + FromSample<f32>,
@@ -65,7 +49,7 @@ where
         let mut sample_clock = 0f32;
     let mut next_value = move || {
         sample_clock = (sample_clock + 1.0) % sample_rate;
-        sin_sample(sample_clock, sample_rate, 440.0 + 6.0 * sin_sample(sample_clock + 20.0, sample_rate, 440.0))
+        synth::fm(sample_clock, sample_rate, 440.0)
     };
 
     #[cfg(feature = "native")]
